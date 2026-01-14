@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:camera/camera.dart';
-import '../screens/sos_page.dart';
+import '../ble_gatt_service.dart';
+
 
 import '../widgets/wave_clipper.dart';
 import 'pre_registration_page.dart';
@@ -198,19 +198,27 @@ class HomePage extends StatelessWidget {
                     },
                   ),
                   _GridTile(
-                    icon: Icons.warning_amber,
-                    title: "Emergency Help",
-                    onTap: () async {
-                      await EmergencyBleService.sendEmergency();
+  icon: Icons.warning_amber,
+  title: "Emergency Help",
+  onTap: () async {
+    try {
+      await BleGattService.startSOS();
 
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text("🚨 Emergency signal sent"),
-                          backgroundColor: Colors.red,
-                        ),
-                      );
-                    },
-                  ),
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("🚨 SOS sent via BLE GATT"),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("❌ Failed to send SOS"),
+        ),
+      );
+    }
+  },
+),
 
                   _GridTile(
                     icon: Icons.person,
