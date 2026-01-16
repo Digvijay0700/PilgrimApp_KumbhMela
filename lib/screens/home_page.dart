@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import '../ble_gatt_service.dart';
-
-
+import 'sos_page.dart';
 import '../widgets/wave_clipper.dart';
 import 'pre_registration_page.dart';
 import 'my_kumbh_id_page.dart';
@@ -10,7 +10,6 @@ import 'my_kumbh_id_page.dart';
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
-  // 🔧 DEV ONLY – clear local QR
   Future<void> _clearLocalKumbhID(BuildContext context) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove("kumbh_qr");
@@ -64,18 +63,12 @@ class HomePage extends StatelessWidget {
                       SizedBox(height: 6),
                       Text(
                         "Digital Identity for a Safe Kumbh",
-                        style: TextStyle(
-                          color: Colors.white70,
-                          fontSize: 16,
-                        ),
+                        style: TextStyle(color: Colors.white70, fontSize: 16),
                       ),
                       SizedBox(height: 4),
                       Text(
                         "Seva • Suraksha • Shraddha",
-                        style: TextStyle(
-                          color: Colors.white60,
-                          fontSize: 13,
-                        ),
+                        style: TextStyle(color: Colors.white60, fontSize: 13),
                       ),
                     ],
                   ),
@@ -104,31 +97,10 @@ class HomePage extends StatelessWidget {
                       final existingQR = prefs.getString("kumbh_qr");
 
                       if (existingQR != null) {
-                        showDialog(
-                          context: context,
-                          builder: (_) => AlertDialog(
-                            title: const Text("Already Registered"),
-                            content: const Text(
-                              "You already have a KumbhID.\nWould you like to view your pass?",
-                            ),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.pop(context),
-                                child: const Text("Cancel"),
-                              ),
-                              ElevatedButton(
-                                onPressed: () {
-                                  Navigator.pop(context);
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => const MyKumbhIDPage(),
-                                    ),
-                                  );
-                                },
-                                child: const Text("View Pass"),
-                              ),
-                            ],
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const MyKumbhIDPage(),
                           ),
                         );
                       } else {
@@ -141,7 +113,9 @@ class HomePage extends StatelessWidget {
                       }
                     },
                   ),
+
                   const SizedBox(height: 16),
+
                   _mainActionCard(
                     context: context,
                     icon: Icons.location_on,
@@ -151,14 +125,12 @@ class HomePage extends StatelessWidget {
                     textColor: Colors.white,
                     iconColor: Colors.white,
                     arrowColor: Colors.white,
-                    onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text("On-Spot Registration (Demo)"),
-                        ),
-                      );
-                    },
+                    onTap: () {},
                   ),
+
+                  // 🚨 SIMPLE SOS SLIDER
+                  const SizedBox(height: 28),
+                  const SimpleSosSlider(),
                 ],
               ),
             ),
@@ -191,50 +163,13 @@ class HomePage extends StatelessWidget {
                   _GridTile(
                     icon: Icons.home,
                     title: "Verified Stays",
-                    onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text("Coming soon")),
-                      );
-                    },
-                  ),
-                  _GridTile(
-  icon: Icons.warning_amber,
-  title: "Emergency Help",
-  onTap: () async {
-    try {
-      await BleGattService.startSOS();
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("🚨 SOS sent via BLE GATT"),
-          backgroundColor: Colors.red,
-        ),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("❌ Failed to send SOS"),
-        ),
-      );
-    }
-  },
-),
-
-                  _GridTile(
-                    icon: Icons.person,
-                    title: "My Profile",
-                    onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text("Profile (Demo)")),
-                      );
-                    },
+                    onTap: () {},
                   ),
                 ],
               ),
             ),
 
             const SizedBox(height: 24),
-
 
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -245,24 +180,14 @@ class HomePage extends StatelessWidget {
               ),
             ),
 
-
             const SizedBox(height: 16),
-
-            // 🔶 FOOTER
-            const Padding(
-              padding: EdgeInsets.all(12),
-              child: Text(
-                "Prototype for Smart Crowd Management at Kumbh Mela",
-                style: TextStyle(fontSize: 12, color: Colors.black54),
-              ),
-            ),
           ],
         ),
       ),
     );
   }
 
-  // 🔶 MAIN ACTION CARD WIDGET
+  // 🔶 MAIN ACTION CARD
   Widget _mainActionCard({
     required BuildContext context,
     required IconData icon,
@@ -325,6 +250,86 @@ class HomePage extends StatelessWidget {
   }
 }
 
+// 🚨 SIMPLE, BUG-FREE SOS SLIDER
+class SimpleSosSlider extends StatefulWidget {
+  const SimpleSosSlider({super.key});
+
+  @override
+  State<SimpleSosSlider> createState() => _SimpleSosSliderState();
+}
+
+class _SimpleSosSliderState extends State<SimpleSosSlider> {
+  double _value = 0;
+
+  Future<void> _triggerSOS() async {
+    await BleGattService.startSOS();
+
+    if (!mounted) return;
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const SosPage()),
+    );
+
+    setState(() => _value = 0);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 70,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(40),
+        gradient: const LinearGradient(
+          colors: [Color(0xFFB71C1C), Color(0xFFD32F2F)],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.red.withOpacity(0.4),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Opacity(
+            opacity: 1 - (_value / 100),
+            child: const Text(
+              "SLIDE FOR EMERGENCY SOS",
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1.2,
+              ),
+            ),
+          ),
+          SliderTheme(
+            data: SliderTheme.of(context).copyWith(
+              trackHeight: 70,
+              activeTrackColor: Colors.transparent,
+              inactiveTrackColor: Colors.transparent,
+              overlayShape: SliderComponentShape.noOverlay,
+              thumbShape:
+              const RoundSliderThumbShape(enabledThumbRadius: 28),
+              thumbColor: Colors.white,
+            ),
+            child: Slider(
+              value: _value,
+              min: 0,
+              max: 100,
+              onChanged: (val) {
+                setState(() => _value = val);
+                if (val >= 95) _triggerSOS();
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 // 🔶 GRID TILE
 class _GridTile extends StatelessWidget {
   final IconData icon;
@@ -347,13 +352,6 @@ class _GridTile extends StatelessWidget {
           color: const Color(0xFFFAFAFA),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: const Color(0xFFE0D6C8)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.06),
-              blurRadius: 6,
-              offset: const Offset(0, 4),
-            ),
-          ],
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -366,7 +364,6 @@ class _GridTile extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: Color(0xFF2E2E2E),
               ),
             ),
           ],

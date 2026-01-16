@@ -27,6 +27,10 @@ class BleGattServerManager(
     }
 
     fun start() {
+        if (gattServer != null) {
+            Log.d("PILGRIM_GATT", "⚠️ GATT already running")
+            return
+        }
 
         gattServer = bluetoothManager.openGattServer(
             context,
@@ -61,6 +65,17 @@ class BleGattServerManager(
         Log.d("PILGRIM_GATT", "🟢 GATT server started")
     }
 
+    // 🛑 THIS IS THE IMPORTANT PART
+    fun stop() {
+        try {
+            gattServer?.close()
+            gattServer = null
+            Log.d("PILGRIM_GATT", "🔴 GATT server stopped")
+        } catch (e: Exception) {
+            Log.e("PILGRIM_GATT", "❌ Error stopping GATT", e)
+        }
+    }
+
     private val gattCallback = object : BluetoothGattServerCallback() {
 
         override fun onConnectionStateChange(
@@ -70,6 +85,8 @@ class BleGattServerManager(
         ) {
             if (newState == BluetoothProfile.STATE_CONNECTED) {
                 Log.d("PILGRIM_GATT", "📡 Volunteer connected")
+            } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
+                Log.d("PILGRIM_GATT", "📴 Volunteer disconnected")
             }
         }
 

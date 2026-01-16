@@ -8,15 +8,23 @@ import java.util.UUID
 
 class EmergencyBleAdvertiser {
 
-    private val advertiser =
-        BluetoothAdapter.getDefaultAdapter().bluetoothLeAdvertiser
+    private val advertiser: BluetoothLeAdvertiser? =
+        BluetoothAdapter.getDefaultAdapter()?.bluetoothLeAdvertiser
 
+    private var advertiseCallback: AdvertiseCallback? = null
+
+    // 🚨 START SOS ADVERTISEMENT
     fun start() {
+        if (advertiseCallback != null) {
+            Log.d("PILGRIM_BLE", "⚠️ SOS already broadcasting")
+            return
+        }
 
         val settings = AdvertiseSettings.Builder()
             .setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_LOW_LATENCY)
             .setTxPowerLevel(AdvertiseSettings.ADVERTISE_TX_POWER_HIGH)
             .setConnectable(true) // REQUIRED for GATT
+            .setTimeout(0) // infinite
             .build()
 
         val data = AdvertiseData.Builder()
@@ -27,18 +35,25 @@ class EmergencyBleAdvertiser {
             )
             .build()
 
-        advertiser.startAdvertising(settings, data, callback)
+        advertiseCallback = object : AdvertiseCallback() {
+            override fun onStartSuccess(settingsInEffect: AdvertiseSettings) {
+                Log.d("PILGRIM_BLE", "🚨 SOS Advertisement started")
+            }
 
-        Log.d("PILGRIM_BLE", "🚨 SOS Advertisement started")
+            override fun onStartFailure(errorCode: Int) {
+                Log.e("PILGRIM_BLE", "❌ Advertise failed: $errorCode")
+            }
+        }
+
+        advertiser?.startAdvertising(settings, data, advertiseCallback)
     }
 
-    private val callback = object : AdvertiseCallback() {
-        override fun onStartSuccess(settingsInEffect: AdvertiseSettings) {
-            Log.d("PILGRIM_BLE", "Advertisement success")
+    // 🛑 STOP SOS ADVERTISEMENT
+    fun stop() {
+        advertiseCallback?.let {
+            advertiser?.stopAdvertising(it)
+            Log.d("PILGRIM_BLE", "🛑 SOS Advertisement stopped")
         }
-
-        override fun onStartFailure(errorCode: Int) {
-            Log.e("PILGRIM_BLE", "Advertise failed: $errorCode")
-        }
+        advertiseCallback = null
     }
 }
